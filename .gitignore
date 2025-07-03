@@ -1,0 +1,29 @@
+# STM32CubeIDE auto-generated files
+.settings/
+.project
+.cproject
+.mxproject
+
+# Build output
+Debug/
+Release/
+build/
+
+# Executable and map files
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.o
+*.d
+
+# Other generated files
+*~
+*.swp
+*.swo
+*.bak
+*.log
+
+# Launch configurations
+*.launch
