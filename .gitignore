@@ -24,6 +24,8 @@ build/
 *.swo
 *.bak
 *.log
+*.snap
+*.xml
 
 # Launch configurations
 *.launch
