@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 volatile uint8_t btData = 0;
-volatile uint16_t speedVal;
+volatile uint16_t speedVal = 300;
 volatile uint16_t IC_Value1;
 volatile uint16_t IC_Value2;
 volatile uint16_t echoTime;
@@ -137,16 +137,33 @@ void HC_TASK_F(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		char buffer[50];
+		static uint8_t wasObstacleDetected = 0; // 이전 장애물 감지 상태
+		//			char buffer[50];
+
 
 		HCSR04_TRIG();
 
 		// 거리 측정 결과를 UART로 전송
-		sprintf(buffer, "%d cm\r\n", distance);
-		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
+		//		sprintf(buffer, "%d cm\r\n", distance);
+		//		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
+		//		osDelay(10);
 
-		HAL_Delay(500);
-		osDelay(1);
+		if(distance <= 45)
+		{
+			if(!wasObstacleDetected) // 장애물을 처음 감지했을 때만
+			{
+				sHandler(); // 뒤로가기
+				wasObstacleDetected = 1;
+			}
+		}
+		else if(distance > 45 && wasObstacleDetected)
+		{
+			// 장애물이 사라졌을 때 정지 (사용자가 다시 명령을 내릴 때까지)
+			stopHandler();
+			wasObstacleDetected = 0;
+		}
+
+		osDelay(100); // 거리센서 측정 주기 추가
 	}
 	/* USER CODE END HC_TASK_F */
 }
@@ -157,50 +174,65 @@ void HC_TASK_F(void *argument)
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_MOTOR_TASK_F */
 void MOTOR_TASK_F(void *argument)
 {
-	/* USER CODE BEGIN MOTOR_TASK_F */
-	/* Infinite loop */
-	for(;;)
-	{
-		if (btData != 0) // 새로운 명령이 있을 때만 처리
-		{
-			if (btData >= '0' && btData <= '9')
-			{
-				speedVal = ((btData - '0') * 70) + 300; // '0'을 빼서 실제 숫자 값으로 변환
-				TIM3->CCR1 = speedVal;
-				TIM3->CCR2 = speedVal;
-			}
-			// 방향 제어 (문자 'S', 'F', 'B', 'R', 'L'에 해당하는 ASCII 값)
-			if (btData == 'S') // Stop (ASCII 83)
-			{
-				stopHandler();
-			}
-			else if (btData == 'F') // Forward (ASCII 70)
-			{
-				wHandler();
-			}
-			else if (btData == 'B') // Backward (ASCII 66)
-			{
-				sHandler();
-			}
-			else if (btData == 'R') // Right (ASCII 82)
-			{
-				dHandler();
-			}
-			else if (btData == 'L') // Left (ASCII 76)
-			{
-				aHandler();
-			}
-
-			btData = 0;
-
-			osDelay(10);
-		}
-
-	}
-	/* USER CODE END MOTOR_TASK_F */
+    /* USER CODE BEGIN MOTOR_TASK_F */
+    /* Infinite loop */
+    for(;;)
+    {
+        if (btData != 0) // 새로운 명령이 있을 때만 처리
+        {
+            if (btData >= '0' && btData <= '9')
+            {
+                speedVal = ((btData - '0') * 70) + 300; // 속도 설정
+                // 현재 동작 중인 모터의 속도를 즉시 업데이트
+                TIM3->CCR1 = speedVal;
+                TIM3->CCR2 = speedVal;
+            }
+            else {
+                // 방향 제어 명령들
+                if (btData == 'S') // Stop
+                {
+                    stopHandler();
+                }
+                else if (btData == 'F') // Forward
+                {
+                    wHandler();
+                }
+                else if (btData == 'B') // Backward
+                {
+                    sHandler();
+                }
+                else if (btData == 'R') // Right (제자리 우회전)
+                {
+                    dHandler();
+                }
+                else if (btData == 'L') // Left (제자리 좌회전)
+                {
+                    aHandler();
+                }
+                else if (btData == 'G') // Forward + Left (부드러운 좌회전)
+                {
+                    wlHandler();
+                }
+                else if (btData == 'H') // Forward + Right (부드러운 우회전)
+                {
+                    wrHandler();
+                }
+                else if (btData == 'I') // Backward + Left (후진 좌회전)
+                {
+                    slHandler();
+                }
+                else if (btData == 'J') // Backward + Right (후진 우회전)
+                {
+                    srHandler();
+                }
+            }
+            btData = 0;
+            osDelay(10);
+        }
+    }
+    /* USER CODE END MOTOR_TASK_F */
 }
 
 /* Private application code --------------------------------------------------*/
