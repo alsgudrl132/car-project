@@ -1,0 +1,20 @@
+/*
+ * motor.h
+ *
+ *  Created on: Jul 3, 2025
+ *      Author: psh
+ */
+
+#ifndef INC_MOTOR_H_
+#define INC_MOTOR_H_
+
+#include "main.h"
+
+void stopHandler();
+void wHandler();
+void sHandler();
+void aHandler();
+void dHandler();
+
+
+#endif /* INC_MOTOR_H_ */

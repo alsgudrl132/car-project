@@ -1,0 +1,258 @@
+/* USER CODE BEGIN Header */
+/**
+ ******************************************************************************
+ * File Name          : freertos.c
+ * Description        : Code for freertos applications
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define TRIG_PORT	GPIOA
+#define TRIG_PIN	GPIO_PIN_11
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN Variables */
+volatile uint8_t btData = 0;
+volatile uint16_t speedVal;
+volatile uint16_t IC_Value1 = 0;
+volatile uint16_t IC_Value2 = 0;
+volatile uint16_t echoTime = 0;
+volatile uint8_t captureFlag = 0;
+volatile uint8_t distance = 0;
+/* USER CODE END Variables */
+/* Definitions for HC_TASK */
+osThreadId_t HC_TASKHandle;
+const osThreadAttr_t HC_TASK_attributes = {
+		.name = "HC_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for MOTOR_TASK */
+osThreadId_t MOTOR_TASKHandle;
+const osThreadAttr_t MOTOR_TASK_attributes = {
+		.name = "MOTOR_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+/** @brief Retargets the C library printf function to the USART.
+ *  @param None
+ *  @retval None
+ */
+PUTCHAR_PROTOTYPE
+{
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART2 and Loop
+     until the end of transmission */
+  if(ch == '\n')
+    HAL_UART_Transmit(&huart2, (uint8_t*) "\r", 1, 0xFFFF);
+    HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
+}
+
+void HCSR04_TRIG(void)
+{
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
+  delay_us(1);
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_SET);
+  delay_us(10);
+  HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
+
+  __HAL_TIM_ENABLE_IT(&htim1, TIM_IT_CC1);
+}
+
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+  {
+    if(captureFlag == 0)  // 아직 캡처를 안했다면
+    {
+      IC_Value1 = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);
+      captureFlag = 1;    // 캡처 했음 !!!
+      // 캡처에 대한 극성을 라이징에서 폴링으로 바꿈
+      __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
+    }
+    else if(captureFlag == 1) // 캡처를 했다면
+    {
+      IC_Value2 = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);
+      __HAL_TIM_SET_COUNTER(&htim1, 0);
+
+      if(IC_Value2 > IC_Value1)
+      {
+        echoTime = IC_Value2 - IC_Value1;
+      }
+      else if(IC_Value1 > IC_Value2)
+      {
+        echoTime = (0xffff - IC_Value1) + IC_Value2;
+      }
+      distance = echoTime / 58;
+      captureFlag = 0;
+      __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+      __HAL_TIM_DISABLE_IT(&htim1, TIM_IT_CC1);
+    }
+  }
+}
+/* USER CODE END FunctionPrototypes */
+
+void HC_TASK_F(void *argument);
+void MOTOR_TASK_F(void *argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/**
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void) {
+	/* USER CODE BEGIN Init */
+
+	/* USER CODE END Init */
+
+	/* USER CODE BEGIN RTOS_MUTEX */
+	/* add mutexes, ... */
+	/* USER CODE END RTOS_MUTEX */
+
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* add semaphores, ... */
+	/* USER CODE END RTOS_SEMAPHORES */
+
+	/* USER CODE BEGIN RTOS_TIMERS */
+	/* start timers, add new ones, ... */
+	/* USER CODE END RTOS_TIMERS */
+
+	/* USER CODE BEGIN RTOS_QUEUES */
+	/* add queues, ... */
+	/* USER CODE END RTOS_QUEUES */
+
+	/* Create the thread(s) */
+	/* creation of HC_TASK */
+	HC_TASKHandle = osThreadNew(HC_TASK_F, NULL, &HC_TASK_attributes);
+
+	/* creation of MOTOR_TASK */
+	MOTOR_TASKHandle = osThreadNew(MOTOR_TASK_F, NULL, &MOTOR_TASK_attributes);
+
+	/* USER CODE BEGIN RTOS_THREADS */
+	/* add threads, ... */
+	/* USER CODE END RTOS_THREADS */
+
+	/* USER CODE BEGIN RTOS_EVENTS */
+	/* add events, ... */
+	/* USER CODE END RTOS_EVENTS */
+
+}
+
+/* USER CODE BEGIN Header_HC_TASK_F */
+/**
+ * @brief  Function implementing the HC_TASK thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_HC_TASK_F */
+void HC_TASK_F(void *argument)
+{
+	/* USER CODE BEGIN HC_TASK_F */
+	/* Infinite loop */
+	for(;;)
+	{
+		HCSR04_TRIG();
+		printf(" %d cm\r\n",distance);
+		HAL_Delay(500);
+		osDelay(100);
+	}
+	/* USER CODE END HC_TASK_F */
+}
+
+/* USER CODE BEGIN Header_MOTOR_TASK_F */
+/**
+ * @brief Function implementing the MOTOR_TASK thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_MOTOR_TASK_F */
+void MOTOR_TASK_F(void *argument)
+{
+	/* USER CODE BEGIN MOTOR_TASK_F */
+	/* Infinite loop */
+	for(;;)
+	{
+		if (btData != 0) // 새로운 명령이 있을 때만 처리
+		{
+			if (btData >= '0' && btData <= '9')
+			{
+				speedVal = ((btData - '0') * 70) + 300; // '0'을 빼서 실제 숫자 값으로 변환
+				TIM3->CCR1 = speedVal;
+				TIM3->CCR2 = speedVal;
+			}
+			// 방향 제어 (문자 'S', 'F', 'B', 'R', 'L'에 해당하는 ASCII 값)
+			if (btData == 'S') // Stop (ASCII 83)
+			{
+				stopHandler();
+			}
+			else if (btData == 'F') // Forward (ASCII 70)
+			{
+				wHandler();
+			}
+			else if (btData == 'B') // Backward (ASCII 66)
+			{
+				sHandler();
+			}
+			else if (btData == 'R') // Right (ASCII 82)
+			{
+				dHandler();
+			}
+			else if (btData == 'L') // Left (ASCII 76)
+			{
+				aHandler();
+			}
+
+			btData = 0;
+
+			osDelay(10);
+		}
+
+	}
+	/* USER CODE END MOTOR_TASK_F */
+}
+
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+
+/* USER CODE END Application */
+

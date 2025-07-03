@@ -1,0 +1,13 @@
+/*
+ * ultra_sonic.c
+ *
+ *  Created on: Jul 3, 2025
+ *      Author: psh
+ */
+
+
+uint16_t IC_Value1 = 0;
+uint16_t IC_Value2 = 0;
+uint16_t echoTime = 0;
+uint8_t captureFlag = 0;
+uint8_t distance = 0;

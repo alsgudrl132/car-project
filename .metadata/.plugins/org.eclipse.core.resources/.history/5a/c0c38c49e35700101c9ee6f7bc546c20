@@ -1,0 +1,23 @@
+/*
+ * ultra_sonic.h
+ *
+ *  Created on: Jul 3, 2025
+ *      Author: psh
+ */
+
+#ifndef INC_ULTRA_SONIC_H_
+#define INC_ULTRA_SONIC_H_
+
+#define TRIG_PORT	GPIOA
+#define TRIG_PIN	GPIO_PIN_11
+
+#include <stdio.h>
+#include "main.h"
+#include "tim.h"
+void HCSR04_TRIG(void);
+extern volatile uint16_t IC_Value1;
+extern volatile uint16_t IC_Value2;
+extern volatile uint16_t echoTime;
+extern volatile uint8_t captureFlag;
+extern volatile uint8_t distance;
+#endif /* INC_ULTRA_SONIC_H_ */

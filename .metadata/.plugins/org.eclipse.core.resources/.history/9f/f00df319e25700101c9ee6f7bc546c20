@@ -1,0 +1,19 @@
+/*
+ * ultra_sonic.h
+ *
+ *  Created on: Jul 3, 2025
+ *      Author: psh
+ */
+
+#ifndef INC_ULTRA_SONIC_H_
+#define INC_ULTRA_SONIC_H_
+
+#include <stdio.h>
+void HCSR04_TRIG(void);
+uint16_t IC_Value1 = 0;
+uint16_t IC_Value2 = 0;
+uint16_t echoTime = 0;
+uint8_t captureFlag = 0;
+uint8_t distance = 0;
+
+#endif /* INC_ULTRA_SONIC_H_ */

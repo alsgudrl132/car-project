@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;RC_CAR/Core/Src/delay_us&apos; to &apos;delay_us.c&apos;" description="Rename resource &apos;delay_us&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/delay_us" name="delay_us.c" stamp="1751527476700" updateReferences="true"/>
+</session>
