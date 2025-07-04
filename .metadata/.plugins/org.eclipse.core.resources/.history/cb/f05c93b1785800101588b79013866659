@@ -50,7 +50,6 @@
 /* USER CODE BEGIN PV */
 uint8_t rxData;
 extern uint8_t btData;
-extern uint8_t isAutoMode;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,14 +61,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   if(huart->Instance==USART1)
   {
 	btData = rxData;
-	if(rxData == 88)
-	{
-		isAutoMode = 1;
-	}
-	else if(rxData == 120)
-	{
-		isAutoMode = 0;
-	}
 
     HAL_UART_Receive_IT(&huart1,&rxData,1);
   }

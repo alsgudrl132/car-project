@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 volatile uint8_t btData = 0;
-volatile uint16_t speedVal = 370;
+volatile uint16_t speedVal = 300;
 volatile uint16_t IC_Value1;
 volatile uint16_t IC_Value2;
 volatile uint16_t echoTime;
@@ -162,7 +162,7 @@ void HC_TASK_F(void *argument)
 			//		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
 			//		osDelay(10);
 
-			if(distance <= 45 && distance > 0)
+			if(distance <= 45)
 			{
 				if(!wasObstacleDetected) // 장애물을 처음 감지했을 때만
 				{
@@ -176,13 +176,6 @@ void HC_TASK_F(void *argument)
 				stopHandler();
 				wasObstacleDetected = 0;
 			}
-			else
-			{
-				stopHandler();
-				wasObstacleDetected = 0;
-			}
-
-
 
 			osDelay(100); // 거리센서 측정 주기 추가
 		}
@@ -210,7 +203,7 @@ void MOTOR_TASK_F(void *argument)
 			{
 				if (btData >= '0' && btData <= '9')
 				{
-					speedVal = ((btData - '0') * 70) + 370; // 속도 설정
+					speedVal = ((btData - '0') * 70) + 300; // 속도 설정
 					// 현재 동작 중인 모터의 속도를 즉시 업데이트
 					TIM3->CCR1 = speedVal;
 					TIM3->CCR2 = speedVal;
@@ -234,10 +227,10 @@ void MOTOR_TASK_F(void *argument)
 					case 'L':  // Left (제자리 좌회전)
 						aHandler();
 						break;
-					case 'G':  // Forward + Left (전진 좌회전)
+					case 'G':  // Forward + Left (부드러운 좌회전)
 						wlHandler();
 						break;
-					case 'H':  // Forward + Right (전진 우회전)
+					case 'H':  // Forward + Right (부드러운 우회전)
 						wrHandler();
 						break;
 					case 'I':  // Backward + Left (후진 좌회전)
@@ -250,6 +243,7 @@ void MOTOR_TASK_F(void *argument)
 						// 명령어가 없거나 처리하지 않는 경우 (필요 시 처리)
 						break;
 					}
+
 				}
 				btData = 0;
 				osDelay(10);
@@ -276,8 +270,6 @@ void RGB_TASK_F(void *argument)
 
 		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)
 		{
-			stopHandler();
-			distance = 0;
 			isAutoMode = 0;
 			osDelay(200);  // 디바운싱
 		}

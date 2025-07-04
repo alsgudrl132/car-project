@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 volatile uint8_t btData = 0;
-volatile uint16_t speedVal = 370;
+volatile uint16_t speedVal = 300;
 volatile uint16_t IC_Value1;
 volatile uint16_t IC_Value2;
 volatile uint16_t echoTime;
@@ -206,11 +206,12 @@ void MOTOR_TASK_F(void *argument)
 	{
 		if(!isAutoMode)
 		{
+			sHandler();
 			if (btData != 0) // 새로운 명령이 있을 때만 처리
 			{
 				if (btData >= '0' && btData <= '9')
 				{
-					speedVal = ((btData - '0') * 70) + 370; // 속도 설정
+					speedVal = ((btData - '0') * 70) + 300; // 속도 설정
 					// 현재 동작 중인 모터의 속도를 즉시 업데이트
 					TIM3->CCR1 = speedVal;
 					TIM3->CCR2 = speedVal;
@@ -276,7 +277,7 @@ void RGB_TASK_F(void *argument)
 
 		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)
 		{
-			stopHandler();
+			sHandler();
 			distance = 0;
 			isAutoMode = 0;
 			osDelay(200);  // 디바운싱

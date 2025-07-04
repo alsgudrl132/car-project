@@ -274,14 +274,14 @@ void RGB_TASK_F(void *argument)
 	for (;;)
 	{
 
-		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)
+		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1 | btData == 88) == GPIO_PIN_RESET)
 		{
 			stopHandler();
 			distance = 0;
 			isAutoMode = 0;
 			osDelay(200);  // 디바운싱
 		}
-		else if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET)
+		else if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4 | btData == 120) == GPIO_PIN_RESET)
 		{
 			isAutoMode = 1;
 			osDelay(200);  // 디바운싱
