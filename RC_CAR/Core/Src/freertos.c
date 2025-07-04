@@ -55,6 +55,7 @@ volatile uint16_t IC_Value2;
 volatile uint16_t echoTime;
 volatile uint8_t captureFlag;
 volatile uint8_t distance;
+volatile uint8_t isAutoMode = 0;	// 기본값 0 오토모드일경우 1
 /* USER CODE END Variables */
 /* Definitions for HC_TASK */
 osThreadId_t HC_TASKHandle;
@@ -70,6 +71,13 @@ const osThreadAttr_t MOTOR_TASK_attributes = {
 		.stack_size = 128 * 4,
 		.priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for RGB_TASK */
+osThreadId_t RGB_TASKHandle;
+const osThreadAttr_t RGB_TASK_attributes = {
+		.name = "RGB_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -78,6 +86,7 @@ const osThreadAttr_t MOTOR_TASK_attributes = {
 
 void HC_TASK_F(void *argument);
 void MOTOR_TASK_F(void *argument);
+void RGB_TASK_F(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -114,6 +123,9 @@ void MX_FREERTOS_Init(void) {
 	/* creation of MOTOR_TASK */
 	MOTOR_TASKHandle = osThreadNew(MOTOR_TASK_F, NULL, &MOTOR_TASK_attributes);
 
+	/* creation of RGB_TASK */
+	RGB_TASKHandle = osThreadNew(RGB_TASK_F, NULL, &RGB_TASK_attributes);
+
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
 	/* USER CODE END RTOS_THREADS */
@@ -137,33 +149,37 @@ void HC_TASK_F(void *argument)
 	/* Infinite loop */
 	for(;;)
 	{
-		static uint8_t wasObstacleDetected = 0; // 이전 장애물 감지 상태
-		//			char buffer[50];
-
-
-		HCSR04_TRIG();
-
-		// 거리 측정 결과를 UART로 전송
-		//		sprintf(buffer, "%d cm\r\n", distance);
-		//		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-		//		osDelay(10);
-
-		if(distance <= 45)
+		if(isAutoMode)
 		{
-			if(!wasObstacleDetected) // 장애물을 처음 감지했을 때만
+			static uint8_t wasObstacleDetected = 0; // 이전 장애물 감지 상태
+			//			char buffer[50];
+
+
+			HCSR04_TRIG();
+
+			// 거리 측정 결과를 UART로 전송
+			//		sprintf(buffer, "%d cm\r\n", distance);
+			//		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
+			//		osDelay(10);
+
+			if(distance <= 45)
 			{
-				sHandler(); // 뒤로가기
-				wasObstacleDetected = 1;
+				if(!wasObstacleDetected) // 장애물을 처음 감지했을 때만
+				{
+					sHandler(); // 뒤로가기
+					wasObstacleDetected = 1;
+				}
 			}
-		}
-		else if(distance > 45 && wasObstacleDetected)
-		{
-			// 장애물이 사라졌을 때 정지 (사용자가 다시 명령을 내릴 때까지)
-			stopHandler();
-			wasObstacleDetected = 0;
+			else if(distance > 45 && wasObstacleDetected)
+			{
+				// 장애물이 사라졌을 때 정지 (사용자가 다시 명령을 내릴 때까지)
+				stopHandler();
+				wasObstacleDetected = 0;
+			}
+
+			osDelay(100); // 거리센서 측정 주기 추가
 		}
 
-		osDelay(100); // 거리센서 측정 주기 추가
 	}
 	/* USER CODE END HC_TASK_F */
 }
@@ -174,65 +190,102 @@ void HC_TASK_F(void *argument)
  * @param argument: Not used
  * @retval None
  */
+/* USER CODE END Header_MOTOR_TASK_F */
 void MOTOR_TASK_F(void *argument)
 {
-    /* USER CODE BEGIN MOTOR_TASK_F */
-    /* Infinite loop */
-    for(;;)
-    {
-        if (btData != 0) // 새로운 명령이 있을 때만 처리
-        {
-            if (btData >= '0' && btData <= '9')
-            {
-                speedVal = ((btData - '0') * 70) + 300; // 속도 설정
-                // 현재 동작 중인 모터의 속도를 즉시 업데이트
-                TIM3->CCR1 = speedVal;
-                TIM3->CCR2 = speedVal;
-            }
-            else {
-                // 방향 제어 명령들
-                if (btData == 'S') // Stop
-                {
-                    stopHandler();
-                }
-                else if (btData == 'F') // Forward
-                {
-                    wHandler();
-                }
-                else if (btData == 'B') // Backward
-                {
-                    sHandler();
-                }
-                else if (btData == 'R') // Right (제자리 우회전)
-                {
-                    dHandler();
-                }
-                else if (btData == 'L') // Left (제자리 좌회전)
-                {
-                    aHandler();
-                }
-                else if (btData == 'G') // Forward + Left (부드러운 좌회전)
-                {
-                    wlHandler();
-                }
-                else if (btData == 'H') // Forward + Right (부드러운 우회전)
-                {
-                    wrHandler();
-                }
-                else if (btData == 'I') // Backward + Left (후진 좌회전)
-                {
-                    slHandler();
-                }
-                else if (btData == 'J') // Backward + Right (후진 우회전)
-                {
-                    srHandler();
-                }
-            }
-            btData = 0;
-            osDelay(10);
-        }
-    }
-    /* USER CODE END MOTOR_TASK_F */
+	/* USER CODE BEGIN MOTOR_TASK_F */
+	/* Infinite loop */
+	for(;;)
+	{
+		if(!isAutoMode)
+		{
+			if (btData != 0) // 새로운 명령이 있을 때만 처리
+			{
+				if (btData >= '0' && btData <= '9')
+				{
+					speedVal = ((btData - '0') * 70) + 300; // 속도 설정
+					// 현재 동작 중인 모터의 속도를 즉시 업데이트
+					TIM3->CCR1 = speedVal;
+					TIM3->CCR2 = speedVal;
+				}
+				else {
+					// 방향 제어 명령들
+					if (btData == 'S') // Stop
+					{
+						stopHandler();
+					}
+					else if (btData == 'F') // Forward
+					{
+						wHandler();
+					}
+					else if (btData == 'B') // Backward
+					{
+						sHandler();
+					}
+					else if (btData == 'R') // Right (제자리 우회전)
+					{
+						dHandler();
+					}
+					else if (btData == 'L') // Left (제자리 좌회전)
+					{
+						aHandler();
+					}
+					else if (btData == 'G') // Forward + Left (부드러운 좌회전)
+					{
+						wlHandler();
+					}
+					else if (btData == 'H') // Forward + Right (부드러운 우회전)
+					{
+						wrHandler();
+					}
+					else if (btData == 'I') // Backward + Left (후진 좌회전)
+					{
+						slHandler();
+					}
+					else if (btData == 'J') // Backward + Right (후진 우회전)
+					{
+						srHandler();
+					}
+				}
+				btData = 0;
+				osDelay(10);
+			}
+		}
+
+	}
+	/* USER CODE END MOTOR_TASK_F */
+}
+
+/* USER CODE BEGIN Header_RGB_TASK_F */
+/**
+ * @brief Function implementing the RGB_TASK thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_RGB_TASK_F */
+void RGB_TASK_F(void *argument)
+{
+	/* USER CODE BEGIN RGB_TASK_F */
+	/* Infinite loop */
+	for (;;)
+	{
+
+		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)
+		{
+			isAutoMode = 0;
+			osDelay(200);  // 디바운싱
+		}
+		else if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET)
+		{
+			isAutoMode = 1;
+			osDelay(200);  // 디바운싱
+		}
+
+		isAutoMode ? redHandler() : greenHandler();
+
+		osDelay(20);  // 반복 주기
+	}
+	/* USER CODE END RGB_TASK_F */
 }
 
 /* Private application code --------------------------------------------------*/
