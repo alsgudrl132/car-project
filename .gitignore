@@ -29,3 +29,4 @@ build/
 
 # Launch configurations
 *.launch
+/.metadata/

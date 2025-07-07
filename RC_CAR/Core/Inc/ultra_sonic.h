@@ -8,8 +8,8 @@
 #ifndef INC_ULTRA_SONIC_H_
 #define INC_ULTRA_SONIC_H_
 
-#define TRIG_PORT	GPIOA
-#define TRIG_PIN	GPIO_PIN_11
+#define TRIG_PORT	GPIOC
+#define TRIG_PIN	GPIO_PIN_9
 
 #include <stdio.h>
 #include "main.h"
