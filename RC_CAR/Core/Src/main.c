@@ -75,37 +75,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   }
 }
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 {
-    if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    {
-        if(captureFlag == 0) // 아직 캡처를 안했다면
-        {
-            IC_Value1 = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);
-            captureFlag = 1; // 캡처 했음 !!!
-            // 캡처에 대한 극성을 라이징에서 폴링으로 바꿈
-            __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
-        }
-        else if(captureFlag == 1) // 캡처를 했다면
-        {
-            IC_Value2 = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1);
-            __HAL_TIM_SET_COUNTER(&htim1, 0);
-
-            if(IC_Value2 > IC_Value1)
-            {
-                echoTime = IC_Value2 - IC_Value1;
-            }
-            else if(IC_Value1 > IC_Value2)
-            {
-                echoTime = (0xffff - IC_Value1) + IC_Value2;
-            }
-
-            distance = echoTime / 58;
-            captureFlag = 0;
-            __HAL_TIM_SET_CAPTUREPOLARITY(&htim1, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
-            __HAL_TIM_DISABLE_IT(&htim1, TIM_IT_CC1);
-        }
-    }
+  HCSR04_IC_CaptureCallback(htim); // 모듈로 위임
 }
 /* USER CODE END PFP */
 
@@ -150,7 +122,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim11);		//us timer
-  HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);	// for ultrasonic timer
+  HCSR04_Init(); // 3채널 캡처 시작
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);

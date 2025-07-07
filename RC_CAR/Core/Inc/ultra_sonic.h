@@ -1,24 +1,28 @@
-/*
- * ultra_sonic.h
- *
- *  Created on: Jul 3, 2025
- *      Author: psh
- */
-
 #ifndef INC_ULTRA_SONIC_H_
 #define INC_ULTRA_SONIC_H_
 
-#define TRIG_PORT	GPIOC
-#define TRIG_PIN	GPIO_PIN_9
-
-#include <stdio.h>
 #include "main.h"
 #include "tim.h"
 
-void HCSR04_TRIG(void);
-extern volatile uint16_t IC_Value1;
-extern volatile uint16_t IC_Value2;
-extern volatile uint16_t echoTime;
-extern volatile uint8_t captureFlag;
-extern volatile uint8_t distance;
+typedef struct {
+  GPIO_TypeDef* trigPort;
+  uint16_t trigPin;
+  TIM_HandleTypeDef* htim;
+  uint32_t channel;
+
+  volatile uint16_t IC_Value1;
+  volatile uint16_t IC_Value2;
+  volatile uint16_t echoTime;
+  volatile uint8_t captureFlag;
+  volatile uint8_t distance;
+} HCSR04_t;
+
+extern HCSR04_t sensorLeft;
+extern HCSR04_t sensorFront;
+extern HCSR04_t sensorRight;
+
+void HCSR04_Init(void);
+void HCSR04_Trigger(HCSR04_t* sensor);
+void HCSR04_IC_CaptureCallback(TIM_HandleTypeDef* htim);
+
 #endif /* INC_ULTRA_SONIC_H_ */

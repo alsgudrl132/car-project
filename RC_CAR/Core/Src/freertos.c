@@ -60,23 +60,23 @@ volatile uint8_t isAutoMode = 0;	// 기본값 0 오토모드일경우 1
 /* Definitions for HC_TASK */
 osThreadId_t HC_TASKHandle;
 const osThreadAttr_t HC_TASK_attributes = {
-  .name = "HC_TASK",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+		.name = "HC_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for MOTOR_TASK */
 osThreadId_t MOTOR_TASKHandle;
 const osThreadAttr_t MOTOR_TASK_attributes = {
-  .name = "MOTOR_TASK",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+		.name = "MOTOR_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for RGB_TASK */
 osThreadId_t RGB_TASKHandle;
 const osThreadAttr_t RGB_TASK_attributes = {
-  .name = "RGB_TASK",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+		.name = "RGB_TASK",
+		.stack_size = 128 * 4,
+		.priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,48 +91,48 @@ void RGB_TASK_F(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+	/* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	/* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	/* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+	/* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+	/* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+	/* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+	/* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of HC_TASK */
-  HC_TASKHandle = osThreadNew(HC_TASK_F, NULL, &HC_TASK_attributes);
+	/* Create the thread(s) */
+	/* creation of HC_TASK */
+	HC_TASKHandle = osThreadNew(HC_TASK_F, NULL, &HC_TASK_attributes);
 
-  /* creation of MOTOR_TASK */
-  MOTOR_TASKHandle = osThreadNew(MOTOR_TASK_F, NULL, &MOTOR_TASK_attributes);
+	/* creation of MOTOR_TASK */
+	MOTOR_TASKHandle = osThreadNew(MOTOR_TASK_F, NULL, &MOTOR_TASK_attributes);
 
-  /* creation of RGB_TASK */
-  RGB_TASKHandle = osThreadNew(RGB_TASK_F, NULL, &RGB_TASK_attributes);
+	/* creation of RGB_TASK */
+	RGB_TASKHandle = osThreadNew(RGB_TASK_F, NULL, &RGB_TASK_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+	/* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
+	/* USER CODE BEGIN RTOS_EVENTS */
 	/* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+	/* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -145,50 +145,47 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_HC_TASK_F */
 void HC_TASK_F(void *argument)
 {
-  /* USER CODE BEGIN HC_TASK_F */
+	char msg[64];
+	/* USER CODE BEGIN HC_TASK_F */
 	/* Infinite loop */
 	for(;;)
 	{
-		if(isAutoMode)
-		{
-			static uint8_t wasObstacleDetected = 0; // 이전 장애물 감지 상태
-			//			char buffer[50];
+		//		if(isAutoMode)
+		//		{
+		//			static uint8_t isSafe = 1; // 이전 장애물 감지 상태
+		//			HCSR04_TRIG();
+		//
+		//			if(distance <= 35 && distance > 0 && isSafe)
+		//			{
+		//
+		//					sHandler(); // 뒤로가기
+		//					isSafe = 0;
+		//
+		//			}
+		//			else if(distance > 35 && !isSafe)
+		//			{
+		//				stopHandler();
+		//				isSafe = 1;
+		//			}
+		//
+		//			osDelay(10); // 거리센서 측정 주기 추가
+		//		}
 
+		HCSR04_Trigger(&sensorLeft);
+		osDelay(60);
+		HCSR04_Trigger(&sensorFront);
+		osDelay(60);
+		HCSR04_Trigger(&sensorRight);
+		osDelay(60);
 
-			HCSR04_TRIG();
+		snprintf(msg, sizeof(msg), "L:%dcm F:%dcm R:%dcm\r\n",
+		             sensorLeft.distance, sensorFront.distance, sensorRight.distance);
+		    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
 
-			// 거리 측정 결과를 UART로 전송
-			//		sprintf(buffer, "%d cm\r\n", distance);
-			//		HAL_UART_Transmit(&huart2, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
-			//		osDelay(10);
-
-			if(distance <= 45 && distance > 0)
-			{
-				if(!wasObstacleDetected) // 장애물을 처음 감지했을 때만
-				{
-					sHandler(); // 뒤로가기
-					wasObstacleDetected = 1;
-				}
-			}
-			else if(distance > 45 && wasObstacleDetected)
-			{
-				// 장애물이 사라졌을 때 정지 (사용자가 다시 명령을 내릴 때까지)
-				stopHandler();
-				wasObstacleDetected = 0;
-			}
-			else
-			{
-				stopHandler();
-				wasObstacleDetected = 0;
-			}
-
-
-
-			osDelay(100); // 거리센서 측정 주기 추가
-		}
+		    osDelay(150);
 
 	}
-  /* USER CODE END HC_TASK_F */
+	/* USER CODE END HC_TASK_F */
 }
 
 /* USER CODE BEGIN Header_MOTOR_TASK_F */
@@ -200,7 +197,7 @@ void HC_TASK_F(void *argument)
 /* USER CODE END Header_MOTOR_TASK_F */
 void MOTOR_TASK_F(void *argument)
 {
-  /* USER CODE BEGIN MOTOR_TASK_F */
+	/* USER CODE BEGIN MOTOR_TASK_F */
 	/* Infinite loop */
 	for(;;)
 	{
@@ -257,7 +254,7 @@ void MOTOR_TASK_F(void *argument)
 		}
 
 	}
-  /* USER CODE END MOTOR_TASK_F */
+	/* USER CODE END MOTOR_TASK_F */
 }
 
 /* USER CODE BEGIN Header_RGB_TASK_F */
@@ -269,7 +266,7 @@ void MOTOR_TASK_F(void *argument)
 /* USER CODE END Header_RGB_TASK_F */
 void RGB_TASK_F(void *argument)
 {
-  /* USER CODE BEGIN RGB_TASK_F */
+	/* USER CODE BEGIN RGB_TASK_F */
 	/* Infinite loop */
 	for (;;)
 	{
@@ -291,7 +288,7 @@ void RGB_TASK_F(void *argument)
 
 		osDelay(20);  // 반복 주기
 	}
-  /* USER CODE END RGB_TASK_F */
+	/* USER CODE END RGB_TASK_F */
 }
 
 /* Private application code --------------------------------------------------*/
