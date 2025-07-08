@@ -49,12 +49,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 volatile uint8_t btData = 0;
-volatile uint16_t speedVal = 370;
-volatile uint16_t IC_Value1;
-volatile uint16_t IC_Value2;
-volatile uint16_t echoTime;
-volatile uint8_t captureFlag;
-volatile uint8_t distance;
+volatile uint16_t speedVal = 700;
+volatile uint8_t currentDirection = 'S';
 volatile uint8_t isAutoMode = 0;	// 기본값 0 오토모드일경우 1
 /* USER CODE END Variables */
 /* Definitions for HC_TASK */
@@ -145,48 +141,72 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_HC_TASK_F */
 void HC_TASK_F(void *argument)
 {
-	char msg[64];
-	/* USER CODE BEGIN HC_TASK_F */
-	/* Infinite loop */
 	for(;;)
 	{
-		//		if(isAutoMode)
-		//		{
-		//			static uint8_t isSafe = 1; // 이전 장애물 감지 상태
-		//			HCSR04_TRIG();
-		//
-		//			if(distance <= 35 && distance > 0 && isSafe)
-		//			{
-		//
-		//					sHandler(); // 뒤로가기
-		//					isSafe = 0;
-		//
-		//			}
-		//			else if(distance > 35 && !isSafe)
-		//			{
-		//				stopHandler();
-		//				isSafe = 1;
-		//			}
-		//
-		//			osDelay(10); // 거리센서 측정 주기 추가
-		//		}
+		HCSR04_Trigger(&sensorLeft);  osDelay(50);
+		HCSR04_Trigger(&sensorFront); osDelay(50);
+		HCSR04_Trigger(&sensorRight); osDelay(50);
 
-		HCSR04_Trigger(&sensorLeft);
-		osDelay(60);
-		HCSR04_Trigger(&sensorFront);
-		osDelay(60);
-		HCSR04_Trigger(&sensorRight);
-		osDelay(60);
+		if(sensorLeft.distance == 0 || sensorLeft.distance > 400) sensorLeft.distance = 400;
+		if(sensorFront.distance == 0 || sensorFront.distance > 400) sensorFront.distance = 400;
+		if(sensorRight.distance == 0 || sensorRight.distance > 400) sensorRight.distance = 400;
 
-		snprintf(msg, sizeof(msg), "L:%dcm F:%dcm R:%dcm\r\n",
-		             sensorLeft.distance, sensorFront.distance, sensorRight.distance);
-		    HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
+		if(isAutoMode)
+		{
+			// 1. 정면 장애물 회피
+			if(sensorFront.distance < 35)
+			{
+				sHandler();
+				osDelay(100);
+				stopHandler();
+				osDelay(100);
 
-		    osDelay(150);
+				if(sensorLeft.distance > sensorRight.distance + 10) {
+					aHandler(); // 왼쪽 회피
+				}
+				else if(sensorRight.distance > sensorLeft.distance + 10) {
+					dHandler(); // 오른쪽 회피
+				}
+				else {
+					sHandler(); // 후진
+					osDelay(200);
+					stopHandler();
+					osDelay(100);
+					continue;
+				}
 
+				osDelay(300);
+				stopHandler();
+				osDelay(100);
+			}
+			// 2. 옆면 너무 가까운 경우 → 살짝 꺾기
+			else if(sensorLeft.distance < 27)
+			{
+				// 왼쪽 너무 가까우면 → 오른쪽 살짝 틀기
+				wrHandler(); // 전진+우회전
+				osDelay(150);
+				stopHandler();
+				osDelay(50);
+			}
+			else if(sensorRight.distance < 27)
+			{
+				// 오른쪽 너무 가까우면 → 왼쪽 살짝 틀기
+				wlHandler(); // 전진+좌회전
+				osDelay(150);
+				stopHandler();
+				osDelay(50);
+			}
+			else
+			{
+				// 정상 전진
+				wHandler();
+			}
+		}
+
+		osDelay(1);
 	}
-	/* USER CODE END HC_TASK_F */
 }
+
 
 /* USER CODE BEGIN Header_MOTOR_TASK_F */
 /**
@@ -213,8 +233,9 @@ void MOTOR_TASK_F(void *argument)
 					TIM3->CCR2 = speedVal;
 				}
 				else {
+					currentDirection = btData;
 					// 방향 제어 명령들
-					switch (btData)
+					switch (currentDirection)
 					{
 					case 'S':  // Stop
 						stopHandler();
@@ -274,7 +295,6 @@ void RGB_TASK_F(void *argument)
 		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET)
 		{
 			stopHandler();
-			distance = 0;
 			isAutoMode = 0;
 			osDelay(200);  // 디바운싱
 		}
