@@ -154,7 +154,7 @@ void HC_TASK_F(void *argument)
 		if(isAutoMode)
 		{
 			// 1. 정면 장애물 회피
-			if(sensorFront.distance < 35)
+			if(sensorFront.distance < 33)
 			{
 				sHandler();
 				osDelay(100);
@@ -180,7 +180,7 @@ void HC_TASK_F(void *argument)
 				osDelay(100);
 			}
 			// 2. 옆면 너무 가까운 경우 → 살짝 꺾기
-			else if(sensorLeft.distance < 27)
+			else if(sensorLeft.distance < 24)
 			{
 				// 왼쪽 너무 가까우면 → 오른쪽 살짝 틀기
 				wrHandler(); // 전진+우회전
@@ -188,7 +188,7 @@ void HC_TASK_F(void *argument)
 				stopHandler();
 				osDelay(50);
 			}
-			else if(sensorRight.distance < 27)
+			else if(sensorRight.distance < 24)
 			{
 				// 오른쪽 너무 가까우면 → 왼쪽 살짝 틀기
 				wlHandler(); // 전진+좌회전
