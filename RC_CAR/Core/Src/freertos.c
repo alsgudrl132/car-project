@@ -90,9 +90,9 @@ void HC_TASK_F(void *argument)
 	{
 		if(isEngineOn)
 		{
-			HCSR04_Trigger(&sensorLeft);  osDelay(50);
-			HCSR04_Trigger(&sensorFront); osDelay(50);
-			HCSR04_Trigger(&sensorRight); osDelay(50);
+			HCSR04_Trigger(&sensorLeft);  osDelay(10);
+			HCSR04_Trigger(&sensorFront); osDelay(10);
+			HCSR04_Trigger(&sensorRight); osDelay(10);
 
 			if (sensorLeft.distance == 0 || sensorLeft.distance > 400)   sensorLeft.distance = 400;
 			if (sensorFront.distance == 0 || sensorFront.distance > 400) sensorFront.distance = 400;
@@ -100,47 +100,38 @@ void HC_TASK_F(void *argument)
 
 			if (isAutoMode)
 			{
-				if (sensorFront.distance < 33)
+				if (sensorFront.distance < 27)
 				{
 					sHandler();
-					osDelay(100);
-					stopHandler();
-					osDelay(100);
+					osDelay(50);
 
-					if (sensorLeft.distance > sensorRight.distance + 10)
+					if (sensorLeft.distance > sensorRight.distance + 7)
 					{
 						aHandler();
 					}
-					else if (sensorRight.distance > sensorLeft.distance + 10)
+					else if (sensorRight.distance > sensorLeft.distance + 7)
 					{
 						dHandler();
 					}
 					else
 					{
 						sHandler();
-						osDelay(200);
-						stopHandler();
 						osDelay(100);
 						continue;
 					}
 
-					osDelay(300);
-					stopHandler();
+					osDelay(100);
+
+				}
+				else if (sensorLeft.distance < 30)
+				{
+					dHandler();
 					osDelay(100);
 				}
-				else if (sensorLeft.distance < 24)
+				else if (sensorRight.distance < 30)
 				{
-					wrHandler();
-					osDelay(150);
-					stopHandler();
-					osDelay(50);
-				}
-				else if (sensorRight.distance < 24)
-				{
-					wlHandler();
-					osDelay(150);
-					stopHandler();
-					osDelay(50);
+					aHandler();
+					osDelay(100);
 				}
 				else
 				{
