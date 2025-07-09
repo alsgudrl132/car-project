@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -120,7 +121,11 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM11_Init();
   MX_USART2_UART_Init();
+  MX_TIM4_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+	MFRC522_Init();
+
   HAL_TIM_Base_Start(&htim11);		//us timer
   HCSR04_Init(); // 3채널 캡처 시작
   HAL_UART_Receive_IT(&huart1, &rxData, 1);
