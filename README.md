@@ -58,8 +58,8 @@ STM32 마이크로컨트롤러를 기반으로 한 **RC카 제어 시스템**입
 ---
 
 ## 📽️ 동작 시연 영상  
-- 🔗 수동 주행 영상 ([수동주행]https://www.youtube.com/shorts/ISOO37JSwbE)  
-- 🔗 자율주행 영상 ([자율주행]https://www.youtube.com/watch?v=L4taoACXe-A&feature=youtu.be)
+- 🔗 [수동 주행 영상](https://www.youtube.com/shorts/ISOO37JSwbE)  
+- 🔗 [자율주행 영상](https://www.youtube.com/watch?v=L4taoACXe-A&feature=youtu.be)
 
 ---
 
