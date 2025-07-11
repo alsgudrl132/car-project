@@ -86,17 +86,17 @@ STM32 마이크로컨트롤러를 기반으로 한 **RC카 제어 시스템**입
 
 ---
 
+    B --> C[Left 센서 측정<br/>osDelay 10ms]
+    C --> D[Front 센서 측정<br/>osDelay 10ms]
+    D --> E[Right 센서 측정<br/>osDelay 10ms]
+    E --> F[거리값 보정<br/>0 또는 400 초과시 400으로 설정]
+
 
 ```mermaid
 flowchart TD
     A[Task 시작] --> B[센서 측정]
-    B --> C[Left 센서 측정<br/>osDelay 10ms]
-    C --> D[Front 센서 측정<br/>osDelay 10ms]
-    D --> E[Right 센서 측정<br/>osDelay 10ms]
-    
-    E --> F[거리값 보정<br/>0 또는 400 초과시 400으로 설정]
-    
-    F --> G{자동 모드?}
+
+    B --> G{자동 모드?}
     G -->|No| Z[osDelay 1ms]
     G -->|Yes| H{전방 거리 < 28cm?}
     
