@@ -84,14 +84,6 @@ STM32 마이크로컨트롤러를 기반으로 한 **RC카 제어 시스템**입
 > ✅ 현재는 한 코스를 완주하는 데 집중하고 있으며,  
 > 향후에는 코스 변경에도 유연하게 대응하는 정밀한 자율주행을 목표로 개선 예정입니다.
 
----
-
-    B --> C[Left 센서 측정<br/>osDelay 10ms]
-    C --> D[Front 센서 측정<br/>osDelay 10ms]
-    D --> E[Right 센서 측정<br/>osDelay 10ms]
-    E --> F[거리값 보정<br/>0 또는 400 초과시 400으로 설정]
-flowchart TD
-
 ```mermaid
 flowchart LR
     A[Task 시작] --> B[센서 측정]
