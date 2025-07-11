@@ -86,3 +86,63 @@ STM32 마이크로컨트롤러를 기반으로 한 **RC카 제어 시스템**입
 
 ---
 
+
+```mermaid
+flowchart TD
+    A[Task 시작] --> B[센서 측정]
+    B --> C[Left 센서 측정<br/>osDelay 10ms]
+    C --> D[Front 센서 측정<br/>osDelay 10ms]
+    D --> E[Right 센서 측정<br/>osDelay 10ms]
+    
+    E --> F[거리값 보정<br/>0 또는 400 초과시 400으로 설정]
+    
+    F --> G{자동 모드?}
+    G -->|No| Z[osDelay 1ms]
+    G -->|Yes| H{전방 거리 < 28cm?}
+    
+    H -->|Yes| I[정지 sHandler]
+    H -->|No| J{좌측 거리 < 28cm?}
+    
+    I --> K[osDelay 50ms]
+    K --> L{좌측 거리 > 우측 거리 + 6?}
+    
+    L -->|Yes| M[좌회전 aHandler]
+    L -->|No| N{우측 거리 > 좌측 거리 + 6?}
+    
+    N -->|Yes| O[우회전 dHandler]
+    N -->|No| P[정지 sHandler<br/>osDelay 100ms]
+    
+    P --> Q[Continue]
+    Q --> Z
+    
+    M --> R[osDelay 100ms]
+    O --> R
+    R --> Z
+    
+    J -->|Yes| S[우회전 dHandler<br/>osDelay 100ms]
+    J -->|No| T{우측 거리 < 28cm?}
+    
+    T -->|Yes| U[좌회전 aHandler<br/>osDelay 100ms]
+    T -->|No| V[전진 wHandler]
+    
+    S --> Z
+    U --> Z
+    V --> Z
+    
+    Z --> B
+    
+    style A fill:#e1f5fe
+    style G fill:#fff3e0
+    style H fill:#fff3e0
+    style J fill:#fff3e0
+    style L fill:#fff3e0
+    style N fill:#fff3e0
+    style T fill:#fff3e0
+    style M fill:#c8e6c9
+    style O fill:#c8e6c9
+    style S fill:#c8e6c9
+    style U fill:#c8e6c9
+    style V fill:#c8e6c9
+    style I fill:#ffcdd2
+    style P fill:#ffcdd2
+```
